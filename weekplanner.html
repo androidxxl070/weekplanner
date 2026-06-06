@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekplanner</title>
+<style>
+  :root {
+    --bg:       #f5f4f0;
+    --surface:  #ffffff;
+    --surface2: #f0efe9;
+    --border:   #e2e0d8;
+    --border2:  #cccabf;
+    --text:     #1a1917;
+    --text2:    #6b6a64;
+    --text3:    #9e9d96;
+    --radius:   10px;
+    --radius-sm: 6px;
+
+    --low-bg:    #e1f5ee; --low-bdr: #5dcaa5; --low-txt: #085041;
+    --norm-bg:   #e6f1fb; --norm-bdr: #85b7eb; --norm-txt: #0c447c;
+    --high-bg:   #faeeda; --high-bdr: #ef9f27; --high-txt: #633806;
+    --urg-bg:    #fcebeb; --urg-bdr:  #f09595; --urg-txt:  #791f1f;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:      #1a1917;
+      --surface: #242320;
+      --surface2:#2c2b28;
+      --border:  #3a3935;
+      --border2: #4e4d48;
+      --text:    #f0efe9;
+      --text2:   #a8a79f;
+      --text3:   #6b6a64;
+      --low-bg:  #04342c; --low-bdr: #0f6e56; --low-txt: #9fe1cb;
+      --norm-bg: #042c53; --norm-bdr:#185fa5; --norm-txt: #b5d4f4;
+      --high-bg: #412402; --high-bdr:#854f0b; --high-txt: #fac775;
+      --urg-bg:  #501313; --urg-bdr: #a32d2d; --urg-txt:  #f7c1c1;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 52px;
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .nav-logo {
+    font-size: 15px; font-weight: 600; color: var(--text);
+    margin-right: auto;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .nav-logo svg { width: 20px; height: 20px; }
+
+  .tab-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    background: none;
+    font-size: 13px; font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  .section-title {
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  /* ── PLANNER GRID ── */
+  .week-nav {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .week-label {
+    font-size: 14px; font-weight: 500; color: var(--text);
+    min-width: 130px; text-align: center;
+  }
+
+  .icon-btn {
+    width: 30px; height: 30px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+    transition: all .15s;
+  }
+
+  .icon-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  .grid-wrap { overflow-x: auto; }
+
+  .week-grid {
+    display: grid;
+    grid-template-columns: 80px repeat(7, minmax(100px, 1fr));
+    gap: 3px;
+    min-width: 700px;
+  }
+
+  .gh { /* grid header */
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase; letter-spacing: .07em;
+  }
+
+  .gh.today { color: var(--norm-txt); }
+
+  .time-lbl {
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 10px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase; letter-spacing: .07em;
+    height: 62px;
+  }
+
+  .slot {
+    height: 62px;
+    border-radius: var(--radius-sm);
+    border: 1.5px dashed var(--border);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: var(--surface);
+  }
+
+  .slot:hover { border-color: var(--border2); background: var(--surface2); }
+
+  .slot.filled { border-style: solid; cursor: default; }
+  .slot.today-col { border-color: var(--norm-bdr); }
+
+  .slot-inner { padding: 4px 6px; width: 100%; text-align: center; }
+  .slot-cat { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; opacity: .7; margin-bottom: 2px; }
+  .slot-opt { font-size: 11px; font-weight: 500; line-height: 1.3; }
+
+  .slot-del {
+    position: absolute; top: 3px; right: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,.15);
+    color: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .15s;
+  }
+
+  .slot.filled:hover .slot-del { opacity: 1; }
+
+  .plus-ico { font-size: 22px; color: var(--border2); line-height: 1; }
+
+  /* ── MODAL ── */
+  .backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    width: 380px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  }
+
+  .modal-hd {
+    font-size: 15px; font-weight: 600;
+    margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .cat-hd {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text3);
+    margin-bottom: 6px; margin-top: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .opt-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+
+  .opt-btn {
+    border: 1.5px solid var(--border2);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px; font-weight: 500;
+    cursor: pointer;
+    background: none;
+    color: var(--text2);
+    transition: all .15s;
+  }
+
+  .opt-btn:hover { border-color: var(--text2); color: var(--text); }
+  .opt-btn.sel { background: #185fa5; border-color: #185fa5; color: #fff; }
+
+  .urg-row { display: flex; gap: 6px; margin: 12px 0; }
+
+  .urg-btn {
+    flex: 1;
+    padding: 6px 6px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    background: none;
+    text-align: center;
+    transition: all .15s;
+  }
+
+  .urg-btn.sel { color: #fff !important; }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 1rem; }
+
+  .btn-cancel {
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: none;
+    color: var(--text2);
+    font-size: 13px; cursor: pointer;
+  }
+
+  .btn-ok {
+    flex: 1;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  /* ── CUSTOM ACTIVITY ── */
+  .custom-input {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .custom-input:focus { outline: none; border-color: #185fa5; }
+
+  /* ── OVERVIEW ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-num { font-size: 26px; font-weight: 600; }
+  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .day-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .day-hd {
+    padding: 10px 14px;
+    font-size: 13px; font-weight: 600;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .day-hd .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--norm-bdr);
+  }
+
+  .day-entries { padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .entry-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+    border: 1.5px solid;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .entry-period {
+    font-size: 9px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em;
+    opacity: .65;
+  }
+
+  .empty-day {
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text3);
+    font-style: italic;
+  }
+
+  .legend-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 1rem;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  .leg-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--text2);
+  }
+
+  .leg-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  /* ── PRINT / PDF ── */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    nav, .toolbar, .tab-btn, .icon-btn, .week-nav button,
+    .slot-del, .export-btn, .clear-btn, #legend { display: none !important; }
+    body { background: #fff !important; color: #1a1917 !important; }
+    main { max-width: 100% !important; padding: 0 !important; }
+    #view-plan { display: block !important; }
+    #view-over { display: block !important; margin-top: 20px; }
+    .grid-wrap { overflow: visible !important; }
+    .week-grid { min-width: unset !important; page-break-inside: avoid; }
+    .slot { height: 52px !important; border-style: solid !important; }
+    .day-summary { page-break-inside: avoid; }
+    .print-header { display: block !important; }
+    .week-label { font-size: 16px !important; font-weight: 600 !important; }
+    .week-nav { margin-bottom: 8px !important; }
+    .section-title { margin-top: 16px !important; }
+  }
+
+  .print-header {
+    display: none;
+    font-size: 11px;
+    color: #9e9d96;
+    text-align: right;
+    margin-bottom: 4px;
+  }
+
+  .export-btn {
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: all .15s;
+  }
+
+  .export-btn:hover { color: var(--text); border-color: var(--text2); }
+
+  .clear-btn {
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--urg-bdr);
+    background: none;
+    color: var(--urg-txt);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .clear-btn:hover { background: var(--urg-bg); }
+
+  .toolbar { display: flex; gap: 8px; margin-bottom: 1rem; align-items: center; }
+
+  /* ── INFO BOX ── */
+  .info-box {
+    margin-top: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .info-box summary {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface2);
+    color: var(--text);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid transparent;
+    transition: background .15s;
+  }
+
+  .info-box[open] summary {
+    border-bottom-color: var(--border);
+  }
+
+  .info-box summary::-webkit-details-marker { display: none; }
+
+  .info-box summary::after {
+    content: '▸';
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text3);
+    transition: transform .2s;
+  }
+
+  .info-box[open] summary::after { transform: rotate(90deg); }
+
+  .info-box summary:hover { background: var(--border); }
+
+  .info-content {
+    padding: 1.25rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 2rem;
+  }
+
+  .info-content h3 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text3);
+    margin-bottom: 8px;
+    grid-column: span 1;
+  }
+
+  .info-content ul,
+  .info-content ol {
+    padding-left: 1.2rem;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+
+  .info-content li { margin-bottom: 2px; }
+
+  .quote {
+    grid-column: 1 / -1;
+    margin-top: .5rem;
+    padding: 12px 16px;
+    border-left: 3px solid var(--norm-bdr);
+    background: var(--norm-bg);
+    color: var(--norm-txt);
+    font-size: 13px;
+    font-style: italic;
+    line-height: 1.7;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  @media (max-width: 600px) {
+    .info-content { grid-template-columns: 1fr; }
+    .quote { grid-column: 1; }
+  }
+
+  @media print {
+    .info-box { display: none !important; }
+  }
+
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    z-index: 999;
+    transition: transform .3s ease, opacity .3s ease;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.ok   { border-color: var(--low-bdr); color: var(--low-txt); background: var(--low-bg); }
+  .toast.err  { border-color: var(--urg-bdr); color: var(--urg-txt); background: var(--urg-bg); }
+  @media print { .toast { display: none !important; } }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="2" y="3" width="16" height="15" rx="2"/>
+      <path d="M7 1v4M13 1v4M2 8h16"/>
+      <rect x="5" y="11" width="3" height="3" rx="1" fill="currentColor" stroke="none"/>
+      <rect x="12" y="11" width="3" height="3" rx="1" fill="currentColor" stroke="none" opacity=".4"/>
+    </svg>
+    Weekplanner
+  </div>
+  <button class="tab-btn active" id="tab-plan" onclick="showTab('plan')">📅 Planner</button>
+  <button class="tab-btn" id="tab-over" onclick="showTab('over')">📊 Overzicht</button>
+</nav>
+
+<main>
+
+  <!-- ── PLANNER TAB ── -->
+  <div id="view-plan">
+    <div class="week-nav">
+      <button class="icon-btn" onclick="prevWeek()" title="Vorige week">&#8592;</button>
+      <span class="week-label" id="week-label"></span>
+      <button class="icon-btn" onclick="nextWeek()" title="Volgende week">&#8594;</button>
+      <button class="icon-btn" onclick="goToday()" title="Naar vandaag" style="margin-left:4px; font-size:11px; width:auto; padding:0 8px;">Vandaag</button>
+    </div>
+
+    <div class="legend-row" id="legend"></div>
+
+    <div class="grid-wrap">
+      <div class="week-grid" id="grid"></div>
+    </div>
+  </div>
+
+  <!-- ── OVERVIEW TAB ── -->
+  <div id="view-over" style="display:none">
+    <div class="toolbar">
+      <span class="section-title" style="margin:0; flex:1">Weekoverzicht — huidige week</span>
+      <button class="export-btn" onclick="exportPDF()">🖨 Exporteer PDF</button>
+      <button class="export-btn" onclick="exportJSON()">⬇ Exporteer JSON</button>
+      <button class="export-btn" onclick="triggerImport()">⬆ Importeer JSON</button>
+      <input type="file" id="import-input" accept=".json" multiple style="display:none" onchange="importJSON(this)">
+      <button class="clear-btn" onclick="clearWeek()">✕ Verwijder week</button>
+    </div>
+    <div class="overview-grid" id="stats"></div>
+    <div class="section-title">Dag-voor-dag</div>
+    <div id="day-list"></div>
+  </div>
+
+
+  <details class="info-box">
+    <summary>📘 Plannen &amp; organiseren verbeteren</summary>
+    <div class="info-content">
+      <div>
+        <h3>🧰 Hulpmiddelen</h3>
+        <ul>
+          <li>Agenda: afspraken noteren</li>
+          <li>Mobiel: reminders instellen</li>
+          <li>Aantekenschrift: notities maken</li>
+          <li>Notitieblokje: ideeën opschrijven</li>
+          <li>To-do list: overzicht van taken</li>
+          <li>Weekplan: structuur per week</li>
+          <li>Dagplan: structuur per dag</li>
+          <li>Checklist: taken afvinken</li>
+        </ul>
+      </div>
+      <div>
+        <h3>⚡ Tips</h3>
+        <ol>
+          <li>Maak taken klein als ze te groot voelen.</li>
+          <li>Begin met moeilijke of uitgestelde taken.</li>
+          <li>Gebruik prioriteiten (rood/oranje/groen).</li>
+          <li>Werk met timers om focus te houden.</li>
+          <li>Doe korte taken meteen ("aanraken = afmaken").</li>
+          <li>Werk één taak tegelijk af.</li>
+          <li>Plan realistisch (alles duurt langer dan gedacht).</li>
+          <li>Ruim direct op na gebruik.</li>
+        </ol>
+      </div>
+      <p class="quote">
+        Als ik volhardend ben, dan bereik ik het.<br>
+        Als ik consequent ben, dan behoud ik het.
+      </p>
+    </div>
+  </details>
+
+</main>
+
+<!-- ── MODAL ── -->
+<div class="backdrop" id="backdrop" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd" id="modal-hd">Activiteit inplannen</div>
+    <div id="cat-list"></div>
+
+    <div id="urg-section" style="display:none">
+      <div class="cat-hd">Urgentie</div>
+      <div class="urg-row" id="urg-row"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-ok" id="btn-ok" onclick="confirmSlot()">Inplannen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const DAYS  = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
+const DSHORT= ['Ma','Di','Wo','Do','Vr','Za','Zo'];
+const PERS  = ['Ochtend','Middag','Avond'];
+
+const CATS = {
+  Werk:            { icon:'💼', opts:['Vergadering','E-mail verwerken','Project werk','Rapporten','Klantgesprek','Training','Planning','Offerte'] },
+  Mantelzorg:      { icon:'❤️', opts:['Doktersbezoek','Boodschappen doen','Vervoer','Medicijnen','Gezelschap','Administratie','Koken voor patiënt'] },
+  Vrijwilligerswerk:{ icon:'🤝', opts:['Activiteit begeleiden','Vergadering','Transport','Voorbereiding','Administratie','Inzameling'] },
+  Persoonlijk:     { icon:'🧘', opts:['Sport','Hobby','Ontspanning','Familie','Afspraken','Zelfzorg','Lezen'] },
+  Huishouden:      { icon:'🏠', opts:['Schoonmaken','Boodschappen','Koken','Onderhoud','Kleding','Tuin','Administratie'] },
+};
+
+const URG = {
+  Laag:   { bg:'var(--low-bg)',  bdr:'var(--low-bdr)',  txt:'var(--low-txt)',  dot:'#1D9E75' },
+  Normaal:{ bg:'var(--norm-bg)', bdr:'var(--norm-bdr)', txt:'var(--norm-txt)', dot:'#185FA5' },
+  Hoog:   { bg:'var(--high-bg)', bdr:'var(--high-bdr)', txt:'var(--high-txt)', dot:'#BA7517' },
+  Urgent: { bg:'var(--urg-bg)',  bdr:'var(--urg-bdr)',  txt:'var(--urg-txt)',  dot:'#A32D2D' },
+};
+
+// ── STATE ─────────────────────────────────────────────────
+let weekOffset = 0;   // 0 = huidige week
+let activeModal = null;   // { weekKey, day, period }
+let selCat = null, selOpt = null, selUrg = 'Normaal';
+
+function weekKey(offset) {
+  const d = mondayOf(offset);
+  return `week_${d.toISOString().slice(0,10)}`;
+}
+
+function mondayOf(offset) {
+  const now = new Date();
+  const day = now.getDay();               // 0=zo
+  const diff = (day === 0 ? -6 : 1 - day);
+  const mon = new Date(now);
+  mon.setHours(0,0,0,0);
+  mon.setDate(now.getDate() + diff + offset * 7);
+  return mon;
+}
+
+function loadGrid(offset) {
+  const k = weekKey(offset);
+  return JSON.parse(localStorage.getItem(k) || 'null') || buildEmpty();
+}
+
+function saveGrid(offset, grid) {
+  localStorage.setItem(weekKey(offset), JSON.stringify(grid));
+}
+
+function buildEmpty() {
+  const g = {};
+  DAYS.forEach(d => { g[d] = {}; PERS.forEach(p => { g[d][p] = null; }); });
+  return g;
+}
+
+// ── RENDER PLANNER ───────────────────────────────────────
+function renderPlanner() {
+  const mon = mondayOf(weekOffset);
+  const dates = DAYS.map((_,i) => { const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+  const todayStr = new Date().toDateString();
+
+  // week label
+  const end = dates[6];
+  document.getElementById('week-label').textContent =
+    `${mon.getDate()} ${mon.toLocaleString('nl',{month:'short'})} – ${end.getDate()} ${end.toLocaleString('nl',{month:'short'})} ${end.getFullYear()}`;
+
+  // legend
+  document.getElementById('legend').innerHTML = Object.entries(URG).map(([k,v])=>
+    `<div class="leg-item"><div class="leg-dot" style="background:${v.dot}"></div>${k}</div>`
+  ).join('') + `<span style="font-size:11px;color:var(--text3);margin-left:6px">— klik op een dagdeel om in te plannen</span>`;
+
+  const grid = loadGrid(weekOffset);
+  const el = document.getElementById('grid');
+  el.innerHTML = '';
+
+  // header row
+  el.innerHTML += `<div></div>` + DSHORT.map((d,i)=>{
+    const isToday = dates[i].toDateString() === todayStr;
+    return `<div class="gh ${isToday?'today':''}">${d}<br><span style="font-weight:400;font-size:12px">${dates[i].getDate()}</span></div>`;
+  }).join('');
+
+  PERS.forEach(period => {
+    el.innerHTML += `<div class="time-lbl">${period}</div>`;
+    DAYS.forEach((day,i) => {
+      const entry = grid[day][period];
+      const isToday = dates[i].toDateString() === todayStr;
+      const u = entry ? URG[entry.urgency] : null;
+      if (entry) {
+        el.innerHTML += `
+          <div class="slot filled ${isToday?'today-col':''}"
+               style="background:${u.bg};border-color:${u.bdr};color:${u.txt}">
+            <div class="slot-inner">
+              <div class="slot-cat">${entry.category}</div>
+              <div class="slot-opt">${entry.option}</div>
+            </div>
+            <button class="slot-del" onclick="deleteSlot('${day}','${period}')" title="Verwijder">✕</button>
+          </div>`;
+      } else {
+        el.innerHTML += `
+          <div class="slot ${isToday?'today-col':''}"
+               onclick="openModal('${day}','${period}')">
+            <span class="plus-ico">+</span>
+          </div>`;
+      }
+    });
+  });
+}
+
+// ── MODAL ────────────────────────────────────────────────
+function openModal(day, period) {
+  activeModal = { day, period };
+  selCat = null; selOpt = null; selUrg = 'Normaal';
+  document.getElementById('modal-hd').textContent = `${day} — ${period}`;
+
+  const cl = document.getElementById('cat-list');
+  cl.innerHTML = Object.entries(CATS).map(([cat,{icon,opts}]) => {
+    const grid = opts.map(o =>
+      `<button class="opt-btn" id="opt_${cat}_${o.replace(/\s/g,'_')}" onclick="selectOpt('${cat}','${o.replace(/'/g,"\\'")}','${cat}_${o.replace(/\s/g,'_')}')">${o}</button>`
+    ).join('');
+    // custom input
+    return `
+      <div class="cat-hd">${icon} ${cat}</div>
+      <div class="opt-wrap">${grid}</div>
+      <input class="custom-input" placeholder="Eigen activiteit toevoegen..." 
+             oninput="customOpt(this,'${cat}')" id="custom_${cat}">
+    `;
+  }).join('');
+
+  renderUrg();
+  document.getElementById('urg-section').style.display = 'none';
+  updateOkBtn();
+  document.getElementById('backdrop').style.display = 'flex';
+}
+
+function selectOpt(cat, opt, id) {
+  selCat = cat; selOpt = opt;
+  // clear all selections
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('.custom-input').forEach(i => i.value = '');
+  const btn = document.getElementById('opt_' + id);
+  if (btn) btn.classList.add('sel');
+  document.getElementById('urg-section').style.display = 'block';
+  updateOkBtn();
+}
+
+function customOpt(el, cat) {
+  if (!el.value.trim()) return;
+  selCat = cat; selOpt = el.value.trim();
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('urg-section').style.display = 'block';
+  updateOkBtn();
+}
+
+function renderUrg() {
+  document.getElementById('urg-row').innerHTML = Object.entries(URG).map(([k,v]) =>
+    `<button class="urg-btn ${selUrg===k?'sel':''}" id="ub_${k}"
+      style="${selUrg===k ? `background:${v.dot};border-color:${v.dot};color:#fff` : `border-color:${v.bdr};color:${v.txt}`}"
+      onclick="selectUrg('${k}')">${k}</button>`
+  ).join('');
+}
+
+function selectUrg(u) {
+  selUrg = u;
+  renderUrg();
+}
+
+function updateOkBtn() {
+  const ok = document.getElementById('btn-ok');
+  ok.style.background = selOpt ? '#185fa5' : 'var(--surface2)';
+  ok.style.color       = selOpt ? '#fff'    : 'var(--text3)';
+  ok.disabled = !selOpt;
+}
+
+function confirmSlot() {
+  if (!selOpt || !activeModal) return;
+  const grid = loadGrid(weekOffset);
+  grid[activeModal.day][activeModal.period] = { category: selCat, option: selOpt, urgency: selUrg };
+  saveGrid(weekOffset, grid);
+  closeModal();
+  renderPlanner();
+}
+
+function closeModal() {
+  document.getElementById('backdrop').style.display = 'none';
+  activeModal = null;
+}
+
+function deleteSlot(day, period) {
+  const grid = loadGrid(weekOffset);
+  grid[day][period] = null;
+  saveGrid(weekOffset, grid);
+  renderPlanner();
+}
+
+// ── WEEK NAV ─────────────────────────────────────────────
+function prevWeek() { weekOffset--; renderPlanner(); if(currentTab==='over') renderOverview(); }
+function nextWeek() { weekOffset++; renderPlanner(); if(currentTab==='over') renderOverview(); }
+function goToday()  { weekOffset=0; renderPlanner(); if(currentTab==='over') renderOverview(); }
+
+// ── OVERVIEW ─────────────────────────────────────────────
+function renderOverview() {
+  const grid = loadGrid(weekOffset);
+  const mon  = mondayOf(weekOffset);
+  const dates= DAYS.map((_,i) => { const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+
+  // stats
+  let total=0, byUrg={Laag:0,Normaal:0,Hoog:0,Urgent:0}, byCat={};
+  DAYS.forEach(day => PERS.forEach(p => {
+    const e = grid[day][p];
+    if (!e) return;
+    total++;
+    byUrg[e.urgency] = (byUrg[e.urgency]||0) + 1;
+    byCat[e.category] = (byCat[e.category]||0) + 1;
+  }));
+
+  const topCat = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-lbl">Activiteiten</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--urg-txt)">${byUrg.Urgent}</div><div class="stat-lbl">Urgent</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--high-txt)">${byUrg.Hoog}</div><div class="stat-lbl">Hoog</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--norm-txt)">${byUrg.Normaal + byUrg.Laag}</div><div class="stat-lbl">Normaal / Laag</div></div>
+    <div class="stat-card"><div class="stat-num">${21-total}</div><div class="stat-lbl">Vrije slots</div></div>
+    ${topCat ? `<div class="stat-card"><div class="stat-num" style="font-size:16px;margin-top:4px">${CATS[topCat[0]]?.icon||'📌'}</div><div class="stat-lbl">${topCat[0]} (${topCat[1]}×)</div></div>` : ''}
+  `;
+
+  // day list
+  document.getElementById('day-list').innerHTML = DAYS.map((day,i) => {
+    const entries = PERS.map(p => grid[day][p] ? {period:p, ...grid[day][p]} : null).filter(Boolean);
+    const dd = dates[i];
+    const isToday = dd.toDateString() === new Date().toDateString();
+    const pills = entries.map(e => {
+      const u = URG[e.urgency];
+      return `<div class="entry-pill" style="background:${u.bg};border-color:${u.bdr};color:${u.txt}">
+        <span class="entry-period">${e.period}</span>
+        <span>${e.category} · ${e.option}</span>
+      </div>`;
+    }).join('');
+    return `<div class="day-summary">
+      <div class="day-hd">
+        ${isToday ? '<div class="dot"></div>' : ''}
+        ${day} <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:4px">${dd.getDate()} ${dd.toLocaleString('nl',{month:'long'})}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3)">${entries.length} activiteit${entries.length!==1?'en':''}</span>
+      </div>
+      ${entries.length
+        ? `<div class="day-entries">${pills}</div>`
+        : `<div class="empty-day">Niets ingepland</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ── EXPORT PDF ───────────────────────────────────────────
+function exportPDF() {
+  // Zorg dat beide views zichtbaar zijn tijdens printen
+  const planView = document.getElementById('view-plan');
+  const overView = document.getElementById('view-over');
+
+  // Render overzicht alvast (kan al rendered zijn)
+  renderOverview();
+
+  // Tijdelijk beide views op display:block zetten
+  const prevPlan = planView.style.display;
+  const prevOver = overView.style.display;
+  planView.style.display = 'block';
+  overView.style.display = 'block';
+
+  // Printtitel instellen
+  const old = document.title;
+  document.title = `Weekplanner – ${document.getElementById('week-label').textContent}`;
+
+  window.print();
+
+  // Na print herstellen
+  document.title = old;
+  planView.style.display = prevPlan;
+  overView.style.display = prevOver;
+}
+
+// ── IMPORT JSON (meerdere bestanden) ─────────────────────
+function triggerImport() {
+  document.getElementById('import-input').click();
+}
+
+function importJSON(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  let done = 0;
+  const results = [];   // { week, ok, error }
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.grid || !data.week) {
+          results.push({ week: file.name, ok: false, error: 'Geen geldig weekplanner bestand' });
+        } else {
+          localStorage.setItem(data.week, JSON.stringify(data.grid));
+          results.push({ week: data.week.replace('week_', ''), ok: true });
+        }
+      } catch(err) {
+        results.push({ week: file.name, ok: false, error: err.message });
+      }
+
+      done++;
+      if (done === files.length) {
+        // Alle bestanden verwerkt — toon samenvatting
+        _showImportResult(results);
+        input.value = ''; // reset voor hergebruik
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function _showImportResult(results) {
+  const ok  = results.filter(r => r.ok);
+  const err = results.filter(r => !r.ok);
+
+  // Navigeer naar de laatste succesvol geïmporteerde week
+  if (ok.length) {
+    const lastWeek = ok[ok.length - 1].week;
+    const importedMonday = new Date(lastWeek);
+    const diffMs = importedMonday - mondayOf(0);
+    const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+    weekOffset = diffWeeks;
+    renderPlanner();
+    if (currentTab === 'over') renderOverview();
+  }
+
+  // Toast bericht tonen
+  let msg = '';
+  if (ok.length)  msg += `✅ ${ok.length} week${ok.length > 1 ? 'en' : ''} geïmporteerd:\n` + ok.map(r => `  • ${r.week}`).join('\n');
+  if (err.length) msg += `\n\n❌ ${err.length} mislukt:\n` + err.map(r => `  • ${r.week}: ${r.error}`).join('\n');
+
+  showToast(ok.length > 0
+    ? `✅ ${ok.length} week${ok.length>1?'en':''} geïmporteerd`
+    : `❌ Import mislukt`,
+    ok.length > 0 ? 'ok' : 'err'
+  );
+
+  if (err.length) setTimeout(() => alert(msg), 300);
+}
+
+// ── EXPORT JSON ───────────────────────────────────────────
+function exportJSON() {
+  const data = { week: weekKey(weekOffset), grid: loadGrid(weekOffset) };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `weekplanner_${weekKey(weekOffset)}.json`;
+  a.click();
+}
+
+function clearWeek() {
+  if (!confirm('Weet je zeker dat je alle activiteiten van deze week wilt verwijderen?')) return;
+  saveGrid(weekOffset, buildEmpty());
+  renderPlanner();
+  renderOverview();
+}
+
+// ── TABS ─────────────────────────────────────────────────
+let currentTab = 'plan';
+
+function showTab(tab) {
+  currentTab = tab;
+  document.getElementById('view-plan').style.display = tab==='plan' ? 'block' : 'none';
+  document.getElementById('view-over').style.display = tab==='over' ? 'block' : 'none';
+  document.getElementById('tab-plan').className = 'tab-btn' + (tab==='plan'?' active':'');
+  document.getElementById('tab-over').className = 'tab-btn' + (tab==='over'?' active':'');
+  if (tab === 'over') renderOverview();
+}
+
+// ── TOAST ────────────────────────────────────────────────
+function showToast(msg, type='ok', duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  // force reflow so transition fires
+  t.offsetHeight;
+  t.classList.add('show');
+  setTimeout(() => { t.classList.remove('show'); }, duration);
+}
+
+// ── INIT ──────────────────────────────────────────────────
+renderPlanner();
+</script>
+
+<div class="toast" id="toast"></div>
+</body>
+</html>
