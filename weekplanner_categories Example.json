@@ -1,0 +1,101 @@
+{
+  "type": "weekplanner_cats",
+  "cats": {
+    "Werk": {
+      "icon": "💼",
+      "opts": [
+        "Werkzaamheden",
+        "Mantelzorg",
+        "Vrijwilligerswerk"
+      ]
+    },
+    "Onderhoud": {
+      "icon": "🔧",
+      "opts": [
+        "Boodschappen",
+        "Koken",
+        "Huishouden",
+        "Administratie",
+        "Repareren",
+        "Klussen",
+        "Tuinieren"
+      ]
+    },
+    "Lichaam": {
+      "icon": "💪",
+      "opts": [
+        "Kracht",
+        "Conditie",
+        "Flexibiliteit"
+      ]
+    },
+    "Geest": {
+      "icon": "🧠",
+      "opts": [
+        "Therapie opdrachten/oefeningen",
+        "Mindfulness/Meditatie",
+        "Spiritualiteit/Geloof",
+        "GGZ"
+      ]
+    },
+    "Inchecken": {
+      "icon": "✅",
+      "opts": [
+        "Lichamelijk",
+        "Geestelijk",
+        "Triggers",
+        "Valkuilen",
+        "Probleemgedrag",
+        "Patronen"
+      ]
+    },
+    "Educatie": {
+      "icon": "📚",
+      "opts": [
+        "Opleiding",
+        "Cursus",
+        "Leren",
+        "Lezen",
+        "Luisterboek",
+        "Podcast",
+        "Ted talk",
+        "Documentaire",
+        "Webinar"
+      ]
+    },
+    "Contacten": {
+      "icon": "👥",
+      "opts": [
+        "Partner",
+        "Kinderen",
+        "Ouders",
+        "Familie",
+        "Vrienden",
+        "Collega's",
+        "Groepsgenoten",
+        "Meeting"
+      ]
+    },
+    "Communicatie": {
+      "icon": "💬",
+      "opts": [
+        "Sociale media",
+        "Apps",
+        "Mails",
+        "Telefoontjes"
+      ]
+    },
+    "Vrije tijd": {
+      "icon": "🎯",
+      "opts": [
+        "Herstellen",
+        "Opladen",
+        "Ontspannen",
+        "Vermaak",
+        "Creativiteit",
+        "Hobby's",
+        "Interesses"
+      ]
+    }
+  }
+}
