@@ -582,9 +582,12 @@
     <div class="toolbar">
       <span class="section-title" style="margin:0; flex:1">Weekoverzicht — huidige week</span>
       <button class="export-btn" onclick="exportPDF()">🖨 Exporteer PDF</button>
-      <button class="export-btn" onclick="exportJSON()">⬇ Exporteer JSON</button>
-      <button class="export-btn" onclick="triggerImport()">⬆ Importeer JSON</button>
+      <button class="export-btn" onclick="exportJSON()">⬇ Week JSON</button>
+      <button class="export-btn" onclick="triggerImport()">⬆ Week JSON</button>
       <input type="file" id="import-input" accept=".json" multiple style="display:none" onchange="importJSON(this)">
+      <button class="export-btn" onclick="exportCats()">⬇ Categorieën</button>
+      <button class="export-btn" onclick="triggerImportCats()">⬆ Categorieën</button>
+      <input type="file" id="import-cats-input" accept=".json" style="display:none" onchange="importCats(this)">
       <button class="clear-btn" onclick="clearWeek()">✕ Verwijder week</button>
     </div>
     <div class="overview-grid" id="stats"></div>
@@ -655,13 +658,32 @@ const DAYS  = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','
 const DSHORT= ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const PERS  = ['Ochtend','Middag','Avond'];
 
-const CATS = {
-  Werk:            { icon:'💼', opts:['Vergadering','E-mail verwerken','Project werk','Rapporten','Klantgesprek','Training','Planning','Offerte'] },
-  Mantelzorg:      { icon:'❤️', opts:['Doktersbezoek','Boodschappen doen','Vervoer','Medicijnen','Gezelschap','Administratie','Koken voor patiënt'] },
-  Vrijwilligerswerk:{ icon:'🤝', opts:['Activiteit begeleiden','Vergadering','Transport','Voorbereiding','Administratie','Inzameling'] },
-  Persoonlijk:     { icon:'🧘', opts:['Sport','Hobby','Ontspanning','Familie','Afspraken','Zelfzorg','Lezen'] },
-  Huishouden:      { icon:'🏠', opts:['Schoonmaken','Boodschappen','Koken','Onderhoud','Kleding','Tuin','Administratie'] },
+const DEFAULT_CATS = {
+  Werk:             { icon:'💼', opts:['Werkzaamheden','Mantelzorg','Vrijwilligerswerk'] },
+  Onderhoud:        { icon:'🔧', opts:['Boodschappen','Koken','Huishouden','Administratie','Repareren','Klussen','Tuinieren'] },
+  Lichaam:          { icon:'💪', opts:['Kracht','Conditie','Flexibiliteit'] },
+  Geest:            { icon:'🧠', opts:['Therapie opdrachten/oefeningen','Mindfulness/Meditatie','Spiritualiteit/Geloof','GGZ'] },
+  Inchecken:        { icon:'✅', opts:['Lichamelijk','Geestelijk','Triggers','Valkuilen','Probleemgedrag','Patronen'] },
+  Educatie:         { icon:'📚', opts:['Opleiding','Cursus','Leren','Lezen','Luisterboek','Podcast','Ted talk','Documentaire','Webinar'] },
+  Contacten:        { icon:'👥', opts:['Partner','Kinderen','Ouders','Familie','Vrienden',"Collega's",'Groepsgenoten','Meeting'] },
+  Communicatie:     { icon:'💬', opts:['Sociale media','Apps','Mails','Telefoontjes'] },
+  'Vrije tijd':     { icon:'🎯', opts:['Herstellen','Opladen','Ontspannen','Vermaak','Creativiteit',"Hobby's",'Interesses'] },
 };
+
+// Laad CATS uit localStorage of gebruik de defaults
+let CATS = loadCats();
+
+function loadCats() {
+  try {
+    const stored = localStorage.getItem('weekplanner_cats');
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_CATS)); // deep copy
+}
+
+function saveCats() {
+  localStorage.setItem('weekplanner_cats', JSON.stringify(CATS));
+}
 
 const URG = {
   Laag:   { bg:'var(--low-bg)',  bdr:'var(--low-bdr)',  txt:'var(--low-txt)',  dot:'#1D9E75' },
@@ -1022,6 +1044,52 @@ function showTab(tab) {
   document.getElementById('tab-plan').className = 'tab-btn' + (tab==='plan'?' active':'');
   document.getElementById('tab-over').className = 'tab-btn' + (tab==='over'?' active':'');
   if (tab === 'over') renderOverview();
+}
+
+// ── CATS EXPORT / IMPORT ─────────────────────────────────
+function exportCats() {
+  const blob = new Blob([JSON.stringify({ type: 'weekplanner_cats', cats: CATS }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'weekplanner_categories.json';
+  a.click();
+  showToast('✅ Categorieën geëxporteerd', 'ok');
+}
+
+function triggerImportCats() {
+  document.getElementById('import-cats-input').click();
+}
+
+function importCats(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Accepteer zowel {type, cats} formaat als direct een CATS object
+      const imported = data.cats || data;
+      // Valideer: elk item moet icon en opts hebben
+      const valid = Object.values(imported).every(v => v.icon && Array.isArray(v.opts));
+      if (!valid) throw new Error('Ongeldig categorieënbestand');
+      CATS = imported;
+      saveCats();
+      renderPlanner();
+      showToast('✅ Categorieën geïmporteerd', 'ok');
+    } catch(err) {
+      showToast('❌ Import mislukt: ' + err.message, 'err');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function resetCats() {
+  if (!confirm('Categorieën terugzetten naar standaard?')) return;
+  CATS = JSON.parse(JSON.stringify(DEFAULT_CATS));
+  saveCats();
+  renderPlanner();
+  showToast('✅ Categorieën teruggezet', 'ok');
 }
 
 // ── TOAST ────────────────────────────────────────────────
