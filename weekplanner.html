@@ -847,6 +847,13 @@ function updateOkBtn() {
 
 function confirmSlot() {
   if (!selOpt || !activeModal) return;
+
+  // Als de optie nog niet in CATS staat (custom invoer) → voeg toe en sla op
+  if (selCat && CATS[selCat] && !CATS[selCat].opts.includes(selOpt)) {
+    CATS[selCat].opts.push(selOpt);
+    saveCats();
+  }
+
   const grid = loadGrid(weekOffset);
   grid[activeModal.day][activeModal.period] = { category: selCat, option: selOpt, urgency: selUrg };
   saveGrid(weekOffset, grid);
