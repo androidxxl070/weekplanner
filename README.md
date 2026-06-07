@@ -1,22 +1,23 @@
-# weekplanner
-🗓️ Offline/Online weekplanner — dagdelen, categorieën &amp; urgentie. Pure HTML/CSS/JS, geen installatie nodig.
-
 # 🗓️ Weekplanner
 
-Een persoonlijke weekplanner als standalone HTML bestand. Geen installatie, geen server, geen framework — open het bestand in je browser en begin met plannen.
+Een persoonlijke weekplanner als standalone HTML bestand. Geen installatie,
+geen server, geen framework — open het bestand in je browser en begin met plannen.
 
 ## ✨ Functies
 
 - **Weekgrid** met Ochtend / Middag / Avond per dag
-- **9 categorieën** — Werk, Onderhoud, Lichaam, Geest, Inchecken, Educatie, Contacten, Communicatie, Vrije tijd
+- **9 categorieën** — Werk, Onderhoud, Lichaam, Geest, Inchecken, Educatie,
+  Contacten, Communicatie, Vrije tijd
 - **Urgentie per activiteit** — Laag / Normaal / Hoog / Urgent (kleurcodering)
-- **Eigen activiteiten** toevoegen naast de vaste opties
+- **Eigen activiteiten toevoegen** — via tekstveld in het keuzemenu, automatisch
+  opgeslagen in de categorie en meegenomen bij export
 - **Weekoverzicht** met statistieken en dag-voor-dag samenvatting
-- **Exporteer PDF** — via browser printfunctie
-- **Exporteer / Importeer JSON** — backup en herstel, meerdere weken tegelijk
-- **Opslag in localStorage** — data blijft staan na herladen
+- **Categorieën aanpassen** — importeer/exporteer je eigen categorieën als JSON
+- **Exporteer PDF** — via browser printfunctie, nette print-layout
+- **Exporteer / Importeer week JSON** — meerdere weken tegelijk (Ctrl+select)
+- **Opslag in localStorage** — weekdata én categorieën blijven staan na herladen
 - **Dark mode** — volgt systeemvoorkeur automatisch
-- **Zelfhostten** — werkt als statische pagina achter Nginx
+- **Zelfhosten** — werkt als statische pagina achter Nginx
 
 ## 🚀 Gebruik
 
@@ -40,22 +41,38 @@ server {
 
 ## 💾 Data & backup
 
-Data wordt opgeslagen in `localStorage` van je browser, gekoppeld aan de domeinnaam.
+Data wordt opgeslagen in `localStorage`, gekoppeld aan de domeinnaam.
 
 | Actie | Knop |
 |-------|------|
-| Opslaan | Automatisch bij elke wijziging |
-| Backup maken | ⬇ Exporteer JSON |
-| Terugzetten | ⬆ Importeer JSON (meerdere bestanden tegelijk) |
-| PDF exporteren | 🖨 Exporteer PDF → "Opslaan als PDF" in printvenster |
+| Week opslaan | Automatisch bij elke wijziging |
+| Week exporteren | ⬇ Week JSON |
+| Weken terugzetten | ⬆ Week JSON (meerdere bestanden via Ctrl+select) |
+| Categorieën exporteren | ⬇ Categorieën |
+| Categorieën importeren | ⬆ Categorieën |
+| PDF exporteren | 🖨 Exporteer PDF → kies "Opslaan als PDF" |
+
+### Categorieën bestand formaat
+```json
+{
+  "type": "weekplanner_cats",
+  "cats": {
+    "Werk": { "icon": "💼", "opts": ["Werkzaamheden", "Vergadering"] },
+    "Vrije tijd": { "icon": "🎯", "opts": ["Herstellen", "Hobby's"] }
+  }
+}
+```
 
 ## 🛠️ Technisch
 
 - Pure HTML / CSS / JavaScript — geen dependencies
-- `localStorage` als key-value opslag per week (`week_YYYY-MM-DD`)
-- `FileReader` API voor JSON import
+- `localStorage` voor weekdata (`week_YYYY-MM-DD`) en categorieën (`weekplanner_cats`)
+- `FileReader` API voor JSON import (meerdere bestanden parallel)
 - `@media print` voor PDF layout
 - `<details>` / `<summary>` voor inklapbare infobox
+- Toast notificaties zonder externe library
+- Custom activiteiten worden via `Array.includes()` gecontroleerd en
+  via `push()` aan de categorie toegevoegd bij bevestigen
 
 ## 📋 Licentie
 
